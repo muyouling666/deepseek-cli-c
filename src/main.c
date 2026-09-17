@@ -611,8 +611,10 @@ static char *read_line(char *buffer, size_t size)
  */
 static int looks_like_invocation(const char *text, const char *prog)
 {
+    static const char *const exe_names[] = { "ai.exe", "ai" };
     const char *p = text;
     size_t len = 0;
+    size_t i;
 
     while (*p == ' ' || *p == '\t' || *p == '.' || *p == '/' || *p == '\\') {
         p++;
@@ -624,12 +626,16 @@ static int looks_like_invocation(const char *text, const char *prog)
     if (len == 0) {
         return 0;
     }
-    if (strncmp(p, prog, len) == 0 && prog[len] == '\0') {
-        return 1;                       /* the token is exactly our program name */
-    }
-    /* Also catch a bare "ai" / "ai.exe" when argv[0] was a full path. */
-    if (strncmp(p, "ai", len) == 0 && (len == 2 || (len == 6 && strncmp(p, "ai.exe", 6) == 0))) {
+
+    /* The token is exactly our program name (argv[0] was a full path). */
+    if (strlen(prog) == len && strncmp(p, prog, len) == 0) {
         return 1;
+    }
+    /* Or the bare executable name, however argv[0] was spelled. */
+    for (i = 0; i < sizeof(exe_names) / sizeof(exe_names[0]); i++) {
+        if (strlen(exe_names[i]) == len && strncmp(p, exe_names[i], len) == 0) {
+            return 1;
+        }
     }
     return 0;
 }

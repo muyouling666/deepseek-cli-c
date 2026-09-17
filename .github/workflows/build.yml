@@ -67,7 +67,10 @@ jobs:
       # ---------------------------------------------------------------- #
       - name: Test (Linux/macOS)
         if: runner.os != 'Windows'
-        run: make test
+        run: |
+          set -x
+          make test 2>&1 | tee test-output-${{ matrix.os }}.txt
+          exit "${PIPESTATUS[0]}"
 
       - name: Test (Windows)
         if: runner.os == 'Windows'
@@ -75,3 +78,14 @@ jobs:
         run: |
           set PATH=C:\tools\msys64\mingw64\bin;C:\tools\msys64\usr\bin;%PATH%
           make test
+
+      # Always upload the test output, so a failure can be diagnosed without
+      # access to the private job log.
+      - name: Upload test output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-output-${{ matrix.os }}
+          path: test-output-${{ matrix.os }}.txt
+          if-no-files-found: ignore
+          retention-days: 7
