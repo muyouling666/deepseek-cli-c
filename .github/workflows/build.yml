@@ -1,0 +1,77 @@
+name: build
+
+on:
+  push:
+    branches: ["**"]
+    paths-ignore:
+      - "**/*.md"
+      - "LICENSE"
+  pull_request:
+    paths-ignore:
+      - "**/*.md"
+      - "LICENSE"
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ---------------------------------------------------------------- #
+      # Toolchain: libcurl headers plus a compiler.                      #
+      # ---------------------------------------------------------------- #
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libcurl4-openssl-dev
+
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install curl pkg-config
+
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          # Chocolatey ships a full MSYS2 with gcc and libcurl, which is far
+          # quicker than building libcurl from source here.
+          choco install msys2 --no-progress -y
+          C:\tools\msys64\usr\bin\bash.exe -lc "pacman -S --noconfirm --needed mingw-w64-x86_64-gcc mingw-w64-x86_64-curl make"
+
+      # ---------------------------------------------------------------- #
+      # Build.                                                           #
+      # ---------------------------------------------------------------- #
+      - name: Build (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: make
+
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: |
+          set PATH=C:\tools\msys64\mingw64\bin;C:\tools\msys64\usr\bin;%PATH%
+          make
+
+      # ---------------------------------------------------------------- #
+      # Test: python drives the client against tests/mock_server.py, so   #
+      # no API key and no network access to the real API are needed.      #
+      # ---------------------------------------------------------------- #
+      - name: Test (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: make test
+
+      - name: Test (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: |
+          set PATH=C:\tools\msys64\mingw64\bin;C:\tools\msys64\usr\bin;%PATH%
+          make test

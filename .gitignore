@@ -1,0 +1,16 @@
+# Build output
+/build/
+/ai
+/ai.exe
+*.o
+*.d
+*.a
+
+# Local toolchain and dependency sources fetched during setup
+/.toolchain/
+*.tar.gz
+*.zip
+
+# Test scratch files
+/tests/__pycache__/
+*.pyc

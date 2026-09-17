@@ -1,0 +1,28 @@
+# Normalise line endings so a Windows checkout and the Linux/macOS CI runners
+# agree on the bytes of every tracked file.
+#
+# - Shell scripts and Makefiles MUST keep LF, otherwise the Linux/macOS CI
+#   jobs fail with "bad interpreter" or make errors.
+# - C sources and headers use LF as well; MSVC and MinGW both accept it.
+# - .bat/.cmd/.ps1 are the only files Windows tooling prefers as CRLF.
+* text=auto eol=lf
+
+*.sh   text eol=lf
+*.ps1  text eol=crlf
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+
+*.c    text eol=lf
+*.h    text eol=lf
+*.py   text eol=lf
+*.md   text eol=lf
+*.yml  text eol=lf
+*.json text eol=lf
+
+# Binaries: never touch these.
+*.exe  binary
+*.o    binary
+*.a    binary
+*.dll  binary
+*.zip  binary
+*.gz   binary
